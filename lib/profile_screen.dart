@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'settings_screen.dart';
+import 'bottom_nav.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -26,7 +28,7 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
+      bottomNavigationBar: const BottomNav(),
     );
   }
 
@@ -42,7 +44,17 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () => Navigator.pop(context),
                 child: const Icon(Icons.arrow_back, color: Colors.white),
               ),
-              const Icon(Icons.more_vert, color: Colors.white),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
+                child: const Icon(Icons.more_vert, color: Colors.white),
+              ),
             ],
           ),
         ),
@@ -578,83 +590,4 @@ class ProfileScreen extends StatelessWidget {
       ],
     );
   }
-
-  Widget _buildBottomNavigation() {
-    return Container(
-      height: 70,
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(Icons.home, 'Home', isSelected: true),
-          _buildNavItem(Icons.people, 'Social'),
-          _buildNavItem(Icons.grid_view, 'Library'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label,
-      {bool isSelected = false, bool isGamePass = false}) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (isGamePass)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.grey,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          )
-        else
-          Icon(
-            icon,
-            color: isSelected ? Colors.white : Colors.grey,
-            size: 24,
-          ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: isSelected ? Colors.white : Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-Widget _buildNavItem(IconData icon, String label,
-    {bool isSelected = false, bool isGamePass = false}) {
-  return Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      if (isGamePass)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          decoration: BoxDecoration(
-            color: Colors.grey,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        )
-      else
-        Icon(
-          icon,
-          color: isSelected ? Colors.white : Colors.grey,
-          size: 24,
-        ),
-      const SizedBox(height: 4),
-      Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          color: isSelected ? Colors.white : Colors.grey,
-        ),
-      ),
-    ],
-  );
 }
