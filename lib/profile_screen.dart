@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'notifications_screen.dart';
 import 'settings_screen.dart';
 import 'bottom_nav.dart';
+import 'game_details_screen.dart';
+import 'achievement_details_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -19,7 +22,9 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     _buildUserProfile(context),
                     _buildRewardsPoints(),
-                    _buildPlayAndEarnPoints(),
+                    _buildRecentlyPlayed(context),
+                    _buildFriends(),
+                    _buildAchievements(context),
                     const SizedBox(height: 80), // Space for bottom navigation
                   ],
                 ),
@@ -118,21 +123,6 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E1E1E),
-                  minimumSize: const Size(double.infinity, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text(
-                  'Botao teste',
-                  style: TextStyle(color: Colors.white),
-                ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -245,349 +235,305 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPlayAndEarnPoints() {
-    return Container(
-      color: const Color(0xFF1E1E1E),
-      padding: const EdgeInsets.all(16),
+  Widget _buildRecentlyPlayed(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'teste',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Encontre atividades divertidas onde você ganha pontos',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text(
+                'Recentemente Jogados',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.white,
+                size: 20,
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-          _buildPointActivity(
-            icon: Icons.arrow_upward,
-            title: 'Login para jogar',
-            points: '+5',
-            progress: '0%',
+          Row(
+            children: [
+              _buildGameCard(
+                context,
+                'Street Fighter II',
+                'assets/street_fighter.png',
+                Colors.blue.shade900,
+              ),
+              const SizedBox(width: 12),
+              _buildGameCard(
+                context,
+                'Contra',
+                'assets/contra.png',
+                Colors.green.shade900,
+              ),
+              const SizedBox(width: 12),
+              _buildGameCard(
+                context,
+                'Streets of Rage',
+                'assets/streets_of_rage.png',
+                Colors.orange.shade900,
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          _buildPointActivity(
-            icon: Icons.refresh,
-            title: 'Usar o aplicativo ',
-            points: '+25',
-            isCompleted: true,
-          ),
-          const SizedBox(height: 12),
-          _buildPointActivity(
-            icon: Icons.laptop,
-            title: 'Jogar um jogo',
-            points: '+10',
-            progress: '0%',
-          ),
-          const SizedBox(height: 12),
-          _buildPointActivity(
-            icon: Icons.refresh,
-            title: 'Bônus semanal',
-            points: '+150',
-            progress: '4/5',
-          ),
-          const SizedBox(height: 12),
-          _buildPointActivity(
-            icon: Icons.refresh,
-            title: 'Jogar um jogo',
-            points: '+10',
-            progress: '0%',
-          ),
-          const SizedBox(height: 24),
-          _buildGamePassQuests(),
         ],
       ),
     );
   }
 
-  Widget _buildPointActivity({
-    required IconData icon,
-    required String title,
-    required String points,
-    String? progress,
-    bool isCompleted = false,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF107C10),
-                borderRadius: BorderRadius.circular(4),
+  Widget _buildGameCard(
+    BuildContext context,
+    String title,
+    String imageUrl,
+    Color color,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GameDetailsScreen(
+                gameName: title,
+                imageUrl: imageUrl,
               ),
-              child: Icon(icon, size: 16, color: Colors.white),
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.white),
-                ),
-                Text(
-                  points,
-                  style: const TextStyle(
-                    color: Color(0xFF107C10),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        if (isCompleted)
-          const Icon(Icons.check, color: Colors.white)
-        else
-          Text(
-            progress!,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
+          );
+        },
+        child: Container(
+          height: 100,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
             ),
           ),
-      ],
+        ),
+      ),
     );
   }
 
-  Widget _buildGamePassQuests() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Ganhe mais pontos',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'missões exclusivas',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildWeeklyGamePassSequence(
-          title: 'Sequências semanais',
-          completedDays: 4,
-          nextWeekPoints: 100,
-          remainingDays: 2,
-        ),
-        const SizedBox(height: 24),
-        _buildWeeklyGamePassSequence(
-          title: 'Sequências semanais ',
-          completedDays: 4,
-          nextWeekPoints: 100,
-          remainingDays: 2,
-          isTeal: true,
-        ),
-        const SizedBox(height: 24),
-        _buildGamePassBundle(
-          title: 'Pacote mensal de 4 jogos',
-          gameCount: 2,
-          points: 50,
-        ),
-        const SizedBox(height: 24),
-        _buildGamePassBundle(
-          title: 'Pacote mensal de 8 jogos',
-          gameCount: 8,
-          points: 250,
-          isGrid: true,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWeeklyGamePassSequence({
-    required String title,
-    required int completedDays,
-    required int nextWeekPoints,
-    required int remainingDays,
-    bool isTeal = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Column(
-          children: [
-            ...List.generate(
-                completedDays,
-                (index) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Row(
-                        children: [
-                          const CircleAvatar(
-                            radius: 10,
-                            backgroundColor: Colors.teal,
-                            child: Icon(Icons.check,
-                                size: 12, color: Colors.white),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${index + 1}d',
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    )),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isTeal ? Colors.teal.shade900 : const Color(0xFF2A2A2A),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 10,
-                        backgroundColor: isTeal
-                            ? const Color(0xFF0B7373)
-                            : const Color(0xFF3A3A3A),
-                        child: Text(
-                          '${completedDays + 1}d',
-                          style: const TextStyle(
-                              fontSize: 10, color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '+$nextWeekPoints',
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  if (!isTeal)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.shade800,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Próxima semana',
-                        style: TextStyle(fontSize: 10, color: Colors.white),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (remainingDays > 1)
-              ...List.generate(
-                  remainingDays - 1,
-                  (index) => Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isTeal
-                                ? Colors.teal.shade900
-                                : const Color(0xFF2A2A2A),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 10,
-                                backgroundColor: isTeal
-                                    ? const Color(0xFF0B7373)
-                                    : const Color(0xFF3A3A3A),
-                                child: Text(
-                                  '${completedDays + index + 2}d',
-                                  style: const TextStyle(
-                                      fontSize: 10, color: Colors.white),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '+$nextWeekPoints',
-                                style: const TextStyle(
-                                    fontSize: 14, color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGamePassBundle({
-    required String title,
-    required int gameCount,
-    required int points,
-    bool isGrid = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 8),
-        if (isGrid)
-          GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            children: List.generate(
-              gameCount,
-              (index) => Container(color: Colors.grey.shade800),
-            ),
-          )
-        else
+  Widget _buildFriends() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
-            children: List.generate(
-              gameCount,
-              (index) => Container(
-                width: 60,
-                height: 60,
-                color: Colors.grey.shade800,
-                margin: EdgeInsets.only(right: index < gameCount - 1 ? 8 : 0),
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text(
+                'Amigos',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.white,
+                size: 20,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildFriendCard(
+                'Amigo 1',
+                'Última vez Online há 145 Dias',
+              ),
+              const SizedBox(width: 12),
+              _buildFriendCard(
+                'Amigo 2',
+                'Última vez Online há 145 Dias',
+              ),
+              const SizedBox(width: 12),
+              _buildFriendCard(
+                'Amigo 3',
+                'Última vez Online há 145 Dias',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFriendCard(String name, String status) {
+    return Expanded(
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.purple.shade900,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: const BoxDecoration(
+                color: Colors.grey,
+                shape: BoxShape.circle,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              status,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 10,
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAchievements(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text(
+                'Conquistas',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.white,
+                size: 20,
+              ),
+            ],
           ),
-      ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildAchievementCard(
+                context,
+                'Jogue 3 Jogos',
+                'assets/achievement1.png',
+                true,
+              ),
+              const SizedBox(width: 12),
+              _buildAchievementCard(
+                context,
+                'Consiga 100 Pontos',
+                'assets/achievement2.png',
+                true,
+              ),
+              const SizedBox(width: 12),
+              _buildAchievementCard(
+                context,
+                'Como outro Sabonete',
+                'assets/achievement3.png',
+                false,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementCard(
+    BuildContext context,
+    String title,
+    String imageUrl,
+    bool isUnlocked,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AchievementDetailsScreen(
+                title: title,
+                imageUrl: imageUrl,
+                isUnlocked: isUnlocked,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          height: 100,
+          decoration: BoxDecoration(
+            color: const Color(0xFF2A2A2A),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isUnlocked ? Colors.purple : Colors.grey.shade700,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    isUnlocked ? Icons.check : Icons.lock,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isUnlocked ? Colors.white : Colors.grey,
+                  fontSize: 12,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

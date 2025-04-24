@@ -51,14 +51,6 @@ class SettingsScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 16),
                     child: Column(
                       children: [
-                        // Theme
-                        _buildToggleSetting(
-                          title: 'Tema',
-                          icon: null,
-                          isOn: true,
-                          showDivider: true,
-                        ),
-
                         // Notifications
                         _buildToggleSetting(
                           title: 'Notificações',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'bottom_nav.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -105,6 +106,17 @@ class HomeScreen extends StatelessWidget {
                       ),
                     );
                   }),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
+                child: const Icon(Icons.more_vert, color: Colors.white),
+              ),
             ],
           ),
         ],
