@@ -18,89 +18,99 @@ class AchievementDetailsScreen extends StatelessWidget {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Header with back button
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back, color: Colors.white),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.arrow_back, color: Colors.white),
+                  ),
+                  const Spacer(),
+                ],
               ),
             ),
 
             // Achievement details
             Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Achievement icon
-                  Container(
-                    width: 150,
-                    height: 150,
-                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.indigo.shade900,
-                      shape: BoxShape.circle,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Achievement icon
+                    Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        color: Colors.indigo.shade900,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: _buildAchievementIcon(),
+                      ),
                     ),
-                    child: Center(
-                      child: _buildAchievementIcon(),
-                    ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // Achievement title
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Progress bar
-                  Container(
-                    width: 200,
-                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          isUnlocked ? '100/100' : '45/100',
-                          style: TextStyle(
-                            color: isUnlocked ? Colors.yellow : Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    // Achievement title
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 8),
-                        Container(
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade800,
-                            borderRadius: BorderRadius.circular(4),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Progress bar
+                    Container(
+                      width: 200,
+                      child: Column(
+                        children: [
+                          Text(
+                            isUnlocked ? '100/100' : '45/100',
+                            style: TextStyle(
+                              color: isUnlocked ? Colors.yellow : Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: isUnlocked ? 200 : 90,
-                                decoration: BoxDecoration(
-                                  color:
-                                      isUnlocked ? Colors.yellow : Colors.blue,
-                                  borderRadius: BorderRadius.circular(4),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade800,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: isUnlocked ? 200 : 90,
+                                  decoration: BoxDecoration(
+                                    color: isUnlocked
+                                        ? Colors.yellow
+                                        : Colors.blue,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -151,7 +161,7 @@ class AchievementDetailsScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   _buildAchievementCard(
                     context,
-                    'Como outro Sabonete',
+                    'Mestre da comunidade',
                     'assets/achievement3.png',
                     false,
                   ),

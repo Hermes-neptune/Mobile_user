@@ -1,12 +1,72 @@
 import 'package:flutter/material.dart';
-import 'notifications_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'settings_screen.dart';
 import 'bottom_nav.dart';
 import 'game_details_screen.dart';
 import 'achievement_details_screen.dart';
+import 'api_config.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class ProfileScreen extends StatefulWidget {
+  final Map<String, dynamic>? userData;
+
+  const ProfileScreen({
+    super.key,
+    this.userData,
+  });
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  List<Map<String, dynamic>> friends = [];
+  bool isLoadingFriends = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFriends();
+  }
+
+  Future<void> _loadFriends() async {
+    if (widget.userData?['id'] == null) return;
+
+    setState(() {
+      isLoadingFriends = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.friendsUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'user_id': widget.userData!['id'],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          setState(() {
+            friends = List<Map<String, dynamic>>.from(data['friends'] ?? []);
+          });
+        } else {
+          print('Erro ao carregar amigos: ${data['message']}');
+        }
+      } else {
+        print('Erro de conexão: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao carregar amigos: $e');
+    } finally {
+      setState(() {
+        isLoadingFriends = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +93,10 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: const BottomNav(),
+      bottomNavigationBar: BottomNavSeparate(
+        currentPage: 'home',
+        userData: widget.userData, // Passando os dados do usuário
+      ),
     );
   }
 
@@ -70,15 +133,51 @@ class ProfileScreen extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: 40,
+                    height: 40,
                     decoration: const BoxDecoration(
-                      color: Colors.red,
                       shape: BoxShape.circle,
                     ),
-                    child: const Center(
-                      child:
-                          Icon(Icons.person, color: Colors.white70, size: 30),
+                    child: ClipOval(
+                      child: Image.network(
+                        widget.userData?['photo'] ??
+                            'https://lfcostldktmoevensqdj.supabase.co/storage/v1/object/public/fotosuser//user.png',
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 60,
+                            height: 60,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.person,
+                                  color: Colors.white70, size: 24),
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 40,
+                            height: 40,
+                            decoration: const BoxDecoration(
+                              color: Colors.grey,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -86,21 +185,16 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: const [
-                            Text(
-                              'Malow',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          widget.userData?['username'] ?? 'Usuário',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
                         ),
-                        const Text(
-                          'Malow#1234',
-                          style: TextStyle(
+                        Text(
+                          widget.userData?['nome_completo'] ?? 'Usuário#1234',
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
                           ),
@@ -110,9 +204,9 @@ class ProfileScreen extends StatelessWidget {
                           children: [
                             const Text('🏆', style: TextStyle(fontSize: 12)),
                             const SizedBox(width: 4),
-                            const Text(
-                              '1,310',
-                              style: TextStyle(
+                            Text(
+                              '${widget.userData?['creditos'] ?? '0'} créditos',
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
                               ),
@@ -127,10 +221,10 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  _buildTab('teste', isSelected: true),
-                  _buildTab('teste'),
-                  _buildTab('teste'),
-                  _buildTab('teste'),
+                  _buildTab('Perfil', isSelected: true),
+                  _buildTab('Jogos'),
+                  _buildTab('Amigos'),
+                  _buildTab('Conquistas'),
                 ],
               ),
             ],
@@ -175,17 +269,17 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Creditos Disponiveis',
+                children: [
+                  const Text(
+                    'Créditos Disponíveis',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
                     ),
                   ),
                   Text(
-                    '1,335',
-                    style: TextStyle(
+                    '${widget.userData?['creditos'] ?? '0'}',
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -196,7 +290,7 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF107C10),
+                  color: const Color(0xFF111827),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -204,7 +298,7 @@ class ProfileScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF0E6B0E),
+                        color: Color(0xFF111827),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.gamepad,
@@ -220,7 +314,7 @@ class ProfileScreen extends StatelessWidget {
                         Text('benefícios',
                             style:
                                 TextStyle(fontSize: 10, color: Colors.white)),
-                        Text('Teste teste',
+                        Text('Gaming Pass',
                             style:
                                 TextStyle(fontSize: 10, color: Colors.white)),
                       ],
@@ -241,9 +335,9 @@ class ProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Text(
                 'Recentemente Jogados',
                 style: TextStyle(
@@ -266,21 +360,21 @@ class ProfileScreen extends StatelessWidget {
                 context,
                 'Street Fighter II',
                 'assets/street_fighter.png',
-                Colors.blue.shade900,
+                const Color(0xFF111827),
               ),
               const SizedBox(width: 12),
               _buildGameCard(
                 context,
                 'Contra',
                 'assets/contra.png',
-                Colors.green.shade900,
+                const Color(0xFF111827),
               ),
               const SizedBox(width: 12),
               _buildGameCard(
                 context,
                 'Streets of Rage',
                 'assets/streets_of_rage.png',
-                Colors.orange.shade900,
+                const Color(0xFF111827),
               ),
             ],
           ),
@@ -336,9 +430,9 @@ class ProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Text(
                 'Amigos',
                 style: TextStyle(
@@ -355,68 +449,125 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildFriendCard(
-                'Amigo 1',
-                'Última vez Online há 145 Dias',
+          if (isLoadingFriends)
+            const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
-              const SizedBox(width: 12),
-              _buildFriendCard(
-                'Amigo 2',
-                'Última vez Online há 145 Dias',
+            )
+          else if (friends.isEmpty)
+            const Center(
+              child: Text(
+                'Nenhum amigo encontrado',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
               ),
-              const SizedBox(width: 12),
-              _buildFriendCard(
-                'Amigo 3',
-                'Última vez Online há 145 Dias',
+            )
+          else
+            SizedBox(
+              height: 140,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: friends.length > 3 ? 3 : friends.length,
+                itemBuilder: (context, index) {
+                  final friend = friends[index];
+                  return Container(
+                    width: 120, // Largura fixa para cada card
+                    margin: EdgeInsets.only(
+                      right: index < 2 && index < friends.length - 1 ? 12.0 : 0,
+                    ),
+                    child: _buildFriendCard(
+                      friend['username'] ?? 'Usuário',
+                      friend['photo'] ??
+                          'https://lfcostldktmoevensqdj.supabase.co/storage/v1/object/public/fotosuser//user.png',
+                    ),
+                  );
+                },
               ),
-            ],
-          ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildFriendCard(String name, String status) {
-    return Expanded(
-      child: Container(
-        height: 120,
-        decoration: BoxDecoration(
-          color: Colors.purple.shade900,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: const BoxDecoration(
-                color: Colors.grey,
-                shape: BoxShape.circle,
+  Widget _buildFriendCard(String name, String photoUrl) {
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: const Color(0xFF111827),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+            ),
+            child: ClipOval(
+              child: Image.network(
+                photoUrl,
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 50,
+                    height: 50,
+                    decoration: const BoxDecoration(
+                      color: Colors.grey,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child:
+                          Icon(Icons.person, color: Colors.white70, size: 24),
+                    ),
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: 50,
+                    height: 50,
+                    decoration: const BoxDecoration(
+                      color: Colors.grey,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
             ),
-            const SizedBox(height: 4),
-            Text(
-              status,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 10,
-              ),
-              maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Online',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.green,
+              fontSize: 10,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -427,9 +578,9 @@ class ProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Text(
                 'Conquistas',
                 style: TextStyle(
@@ -464,7 +615,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(width: 12),
               _buildAchievementCard(
                 context,
-                'Como outro Sabonete',
+                'Mestre da comunidade',
                 'assets/achievement3.png',
                 false,
               ),
@@ -498,7 +649,7 @@ class ProfileScreen extends StatelessWidget {
         child: Container(
           height: 100,
           decoration: BoxDecoration(
-            color: const Color(0xFF2A2A2A),
+            color: const Color(0xFF111827),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(

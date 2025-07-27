@@ -13,9 +13,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>xbox_app</string>
+	<string>tcc_usuario</string>
 <key>CFBundleDisplayName</key>
-<string>xboxapp</string>
+<string>tccusuario</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

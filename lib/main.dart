@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'home_screen.dart';
+import 'login_screen.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -30,7 +30,7 @@ class XboxApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const LoginScreen(),
     );
   }
 }
