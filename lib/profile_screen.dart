@@ -21,12 +21,16 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   List<Map<String, dynamic>> friends = [];
+  List<Map<String, dynamic>> medalhas = [];
   bool isLoadingFriends = false;
+  bool isLoadingMedalhas = false;
+  String selectedTab = 'Perfil';
 
   @override
   void initState() {
     super.initState();
     _loadFriends();
+    _loadMedalhas();
   }
 
   Future<void> _loadFriends() async {
@@ -68,6 +72,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _loadMedalhas() async {
+    if (widget.userData?['id'] == null) return;
+
+    setState(() {
+      isLoadingMedalhas = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+            ApiConfig.getMedalhasURL), // Adicione esta URL ao seu ApiConfig
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'user_id': widget.userData!['id'],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          setState(() {
+            medalhas = List<Map<String, dynamic>>.from(data['medalhas'] ?? []);
+          });
+        } else {
+          print('Erro ao carregar medalhas: ${data['message']}');
+        }
+      } else {
+        print('Erro de conexão: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao carregar medalhas: $e');
+    } finally {
+      setState(() {
+        isLoadingMedalhas = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,9 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     _buildUserProfile(context),
                     _buildRewardsPoints(),
-                    _buildRecentlyPlayed(context),
-                    _buildFriends(),
-                    _buildAchievements(context),
+                    _buildTabContent(),
                     const SizedBox(height: 80), // Space for bottom navigation
                   ],
                 ),
@@ -95,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       bottomNavigationBar: BottomNavSeparate(
         currentPage: 'home',
-        userData: widget.userData, // Passando os dados do usuário
+        userData: widget.userData,
       ),
     );
   }
@@ -211,6 +253,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: Colors.grey,
                               ),
                             ),
+                            const SizedBox(width: 12),
+                            const Text('🥇', style: TextStyle(fontSize: 12)),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${medalhas.length} medalhas',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -221,10 +273,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  _buildTab('Perfil', isSelected: true),
-                  _buildTab('Jogos'),
-                  _buildTab('Amigos'),
-                  _buildTab('Conquistas'),
+                  _buildTab('Perfil', isSelected: selectedTab == 'Perfil'),
+                  _buildTab('Jogos', isSelected: selectedTab == 'Jogos'),
+                  _buildTab('Amigos', isSelected: selectedTab == 'Amigos'),
+                  _buildTab('Medalhas', isSelected: selectedTab == 'Medalhas'),
                 ],
               ),
             ],
@@ -236,26 +288,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildTab(String label, {bool isSelected = false}) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isSelected ? Colors.white : Colors.transparent,
-              width: 2,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            selectedTab = label;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? Colors.white : Colors.transparent,
+                width: 2,
+              ),
             ),
           ),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14,
-            color: isSelected ? Colors.white : Colors.grey,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: isSelected ? Colors.white : Colors.grey,
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildTabContent() {
+    switch (selectedTab) {
+      case 'Jogos':
+        return _buildRecentlyPlayed(context);
+      case 'Amigos':
+        return _buildFriends();
+      case 'Medalhas':
+        return _buildMedalhas();
+      default:
+        return _buildAchievements(context);
+    }
   }
 
   Widget _buildRewardsPoints() {
@@ -304,27 +376,300 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: const Icon(Icons.gamepad,
                           size: 16, color: Colors.white),
                     ),
-                    const SizedBox(width: 8),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Confira seus',
-                            style:
-                                TextStyle(fontSize: 10, color: Colors.white)),
-                        Text('benefícios',
-                            style:
-                                TextStyle(fontSize: 10, color: Colors.white)),
-                        Text('Gaming Pass',
-                            style:
-                                TextStyle(fontSize: 10, color: Colors.white)),
-                      ],
-                    ),
                   ],
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMedalhas() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Medalhas',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                '${medalhas.length} total',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (isLoadingMedalhas)
+            const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          else if (medalhas.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(32.0),
+              child: const Column(
+                children: [
+                  Icon(
+                    Icons.emoji_events_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Nenhuma medalha ainda',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Continue jogando e participando para ganhar suas primeiras medalhas!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.8,
+              ),
+              itemCount: medalhas.length,
+              itemBuilder: (context, index) {
+                final medalha = medalhas[index];
+                return _buildMedalhaCard(medalha);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedalhaCard(Map<String, dynamic> medalha) {
+    return GestureDetector(
+      onTap: () {
+        _showMedalhaDetails(medalha);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.amber.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.1),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+                child: medalha['url_img'] != null
+                    ? ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
+                        child: Image.network(
+                          medalha['url_img'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(
+                                Icons.emoji_events,
+                                color: Colors.amber,
+                                size: 40,
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.amber),
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    : const Center(
+                        child: Icon(
+                          Icons.emoji_events,
+                          color: Colors.amber,
+                          size: 40,
+                        ),
+                      ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      medalha['name'] ?? 'Medalha',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (medalha['descricao'] != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        medalha['descricao'],
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMedalhaDetails(Map<String, dynamic> medalha) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.amber.withOpacity(0.3),
+                  width: 2,
+                ),
+              ),
+              child: medalha['url_img'] != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        medalha['url_img'],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(
+                              Icons.emoji_events,
+                              color: Colors.amber,
+                              size: 50,
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(
+                        Icons.emoji_events,
+                        color: Colors.amber,
+                        size: 50,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              medalha['name'] ?? 'Medalha',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            if (medalha['descricao'] != null)
+              Text(
+                medalha['descricao'],
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                '🏆 Medalha Conquistada',
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -474,7 +819,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 itemBuilder: (context, index) {
                   final friend = friends[index];
                   return Container(
-                    width: 120, // Largura fixa para cada card
+                    width: 120,
                     margin: EdgeInsets.only(
                       right: index < 2 && index < friends.length - 1 ? 12.0 : 0,
                     ),
@@ -602,21 +947,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildAchievementCard(
                 context,
                 'Jogue 3 Jogos',
-                'assets/achievement1.png',
+                Icons.gamepad,
+                Colors.green,
                 true,
               ),
               const SizedBox(width: 12),
               _buildAchievementCard(
                 context,
                 'Consiga 100 Pontos',
-                'assets/achievement2.png',
+                Icons.emoji_events,
+                Colors.amber,
                 true,
               ),
               const SizedBox(width: 12),
               _buildAchievementCard(
                 context,
                 'Mestre da comunidade',
-                'assets/achievement3.png',
+                Icons.people,
+                Colors.purple,
                 false,
               ),
             ],
@@ -629,7 +977,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildAchievementCard(
     BuildContext context,
     String title,
-    String imageUrl,
+    IconData icon,
+    Color color,
     bool isUnlocked,
   ) {
     return Expanded(
@@ -640,46 +989,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
             MaterialPageRoute(
               builder: (context) => AchievementDetailsScreen(
                 title: title,
-                imageUrl: imageUrl,
+                imageUrl: 'assets/achievement.png',
                 isUnlocked: isUnlocked,
               ),
             ),
           );
         },
         child: Container(
-          height: 100,
+          height: 140,
           decoration: BoxDecoration(
-            color: const Color(0xFF111827),
+            color: const Color(0xFF1E1E1E),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: isUnlocked ? Colors.purple : Colors.grey.shade700,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(
-                    isUnlocked ? Icons.check : Icons.lock,
-                    color: Colors.white,
-                    size: 20,
+              // Achievement image/icon
+              Expanded(
+                flex: 3,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.3),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      icon,
+                      color: color,
+                      size: 30,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isUnlocked ? Colors.white : Colors.grey,
-                  fontSize: 12,
+              // Achievement info
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Center(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

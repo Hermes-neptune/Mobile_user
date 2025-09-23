@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'login_screen.dart';
 import 'api_config.dart';
 
@@ -14,13 +16,38 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
 
+  bool _isLoadingPreferences = true;
+  String? _userId;
+
   @override
   void initState() {
     super.initState();
-    _loadNotificationSettings();
+    _initializeSettings();
   }
 
-  // Carregar configurações de notificação
+  // Inicializar configurações
+  Future<void> _initializeSettings() async {
+    await _loadUserId();
+    await _loadNotificationSettings();
+    if (_userId != null) {
+      await _loadServerPreferences();
+    }
+    setState(() {
+      _isLoadingPreferences = false;
+    });
+  }
+
+  // Carregar ID do usuário
+  Future<void> _loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userData = prefs.getString('user_data');
+    if (userData != null) {
+      final userJson = json.decode(userData);
+      _userId = userJson['id'];
+    }
+  }
+
+  // Carregar configurações locais de notificação
   Future<void> _loadNotificationSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -28,13 +55,92 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  // Salvar configurações de notificação
+  // Carregar preferências do servidor
+  Future<void> _loadServerPreferences() async {
+    if (_userId == null) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.getPreferencesURL),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'user_id': _userId}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          final preferences = data['preferences'];
+          setState(() {
+            _notificationsEnabled = preferences['mobile_notif'] ?? true;
+          });
+
+          // Sincronizar com SharedPreferences
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('notifications_enabled', _notificationsEnabled);
+        }
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar preferências: $e');
+    }
+  }
+
+  // Salvar configurações locais de notificação
   Future<void> _saveNotificationSettings(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notifications_enabled', value);
     setState(() {
       _notificationsEnabled = value;
     });
+
+    // Também atualizar no servidor se usuário estiver logado
+    if (_userId != null) {
+      _updateServerPreference('mobile_notif', value);
+    }
+  }
+
+  // Atualizar preferência específica no servidor
+  Future<void> _updateServerPreference(
+      String preferenceType, bool value) async {
+    if (_userId == null) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.updatePreferencesURL),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'user_id': _userId,
+          preferenceType: value,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          _showSnackBar('Preferência atualizada com sucesso', Colors.green);
+        } else {
+          _showSnackBar('Erro: ${data['message']}', Colors.red);
+          // Reverter mudança local em caso de erro
+          await _loadServerPreferences();
+        }
+      } else {
+        _showSnackBar('Erro de conexão', Colors.red);
+        await _loadServerPreferences();
+      }
+    } catch (e) {
+      _showSnackBar('Erro ao salvar preferência', Colors.red);
+      await _loadServerPreferences();
+    }
+  }
+
+  // Mostrar SnackBar
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   // Função para abrir o site "Sobre Nós"
@@ -45,25 +151,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (await canLaunchUrl(url)) {
         await launchUrl(
           url,
-          mode: LaunchMode.externalApplication, // Abre no navegador externo
+          mode: LaunchMode.externalApplication,
         );
       } else {
-        // Mostrar erro se não conseguir abrir o URL
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Não foi possível abrir o site'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnackBar('Não foi possível abrir o site', Colors.red);
       }
     } catch (e) {
-      // Mostrar erro em caso de exceção
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao abrir o site: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar('Erro ao abrir o site: $e', Colors.red);
     }
   }
 
@@ -74,31 +168,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (await canLaunchUrl(url)) {
         await launchUrl(
           url,
-          mode: LaunchMode.externalApplication, // Abre no navegador externo
+          mode: LaunchMode.externalApplication,
         );
       } else {
-        // Mostrar erro se não conseguir abrir o URL
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Não foi possível abrir o site'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnackBar('Não foi possível abrir o site', Colors.red);
       }
     } catch (e) {
-      // Mostrar erro em caso de exceção
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao abrir o site: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar('Erro ao abrir o site: $e', Colors.red);
     }
   }
 
   // Função para fazer logout
   Future<void> _logout() async {
-    // Mostrar dialog de confirmação
     bool? shouldLogout = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -133,7 +214,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (shouldLogout == true) {
-      // Mostrar indicador de carregamento
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -143,31 +223,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       try {
-        // Limpar dados do SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('user_data');
         await prefs.setBool('is_logged_in', false);
 
-        // Fechar dialog de carregamento
         Navigator.of(context).pop();
 
-        // Navegar para a tela de login
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
           (route) => false,
         );
       } catch (e) {
-        // Fechar dialog de carregamento
         Navigator.of(context).pop();
-
-        // Mostrar erro
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao fazer logout: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnackBar('Erro ao fazer logout: $e', Colors.red);
       }
     }
   }
@@ -200,74 +269,107 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
-                  // Empty space to balance the back button
                   const SizedBox(width: 24),
                 ],
               ),
             ),
 
             // Settings Groups
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  // Main Settings
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2A2A2A),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: Column(
-                      children: [
-                        // Notifications
-                        _buildToggleSetting(
-                          title: 'Notificações',
-                          icon: Icons.notifications_outlined,
-                          isOn: _notificationsEnabled,
-                          showDivider: true,
-                          onToggle: _saveNotificationSettings,
-                        ),
+            Expanded(
+              child: _isLoadingPreferences
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        children: [
+                          // Notification Settings
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2A2A2A),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: Column(
+                              children: [
+                                // Header das Notificações
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.notifications_outlined,
+                                          color: Colors.white, size: 20),
+                                      const SizedBox(width: 12),
+                                      const Text(
+                                        'Notificações',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Divider(
+                                    color: Color(0xFF3A3A3A), height: 1),
 
-                        // Account
-                        _buildNavigationSetting(
-                          title: 'Conta',
-                          icon: Icons.person_outline,
-                          onTap: _openConfigWebsite,
-                        ),
-                      ],
-                    ),
-                  ),
+                                // Notificações Gerais (Local)
+                                _buildToggleSetting(
+                                  title: 'Notificações do App',
+                                  subtitle: 'Controle geral das notificações',
+                                  isOn: _notificationsEnabled,
+                                  showDivider: true,
+                                  onToggle: _saveNotificationSettings,
+                                ),
+                              ],
+                            ),
+                          ),
 
-                  // About Us
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2A2A2A),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: _buildNavigationSetting(
-                      title: 'Sobre Nós',
-                      icon: Icons.info_outline,
-                      onTap:
-                          _openAboutUsWebsite, // Chama a função para abrir o site
-                    ),
-                  ),
+                          // Account Settings
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2A2A2A),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: _buildNavigationSetting(
+                              title: 'Conta',
+                              icon: Icons.person_outline,
+                              onTap: _openConfigWebsite,
+                            ),
+                          ),
 
-                  // Logout
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2A2A2A),
-                      borderRadius: BorderRadius.circular(12),
+                          // About Us
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2A2A2A),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: _buildNavigationSetting(
+                              title: 'Sobre Nós',
+                              icon: Icons.info_outline,
+                              onTap: _openAboutUsWebsite,
+                            ),
+                          ),
+
+                          // Logout
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2A2A2A),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: _buildSimpleSetting(
+                              title: 'Desconectar',
+                              icon: Icons.logout,
+                              onTap: _logout,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: _buildSimpleSetting(
-                      title: 'Desconectar',
-                      icon: Icons.logout,
-                      onTap: _logout,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),
@@ -277,62 +379,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildToggleSetting({
     required String title,
+    String? subtitle,
     IconData? icon,
     required bool isOn,
     required bool showDivider,
+    bool enabled = true,
     required Function(bool) onToggle,
   }) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, color: Colors.white, size: 20),
-                    const SizedBox(width: 12),
-                  ],
-                  Text(
-                    title,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+        Opacity(
+          opacity: enabled ? 1.0 : 0.5,
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          if (icon != null) ...[
+                            Icon(icon, color: Colors.white, size: 20),
+                            const SizedBox(width: 12),
+                          ],
+                          Text(
+                            title,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 4),
+                        Padding(
+                          padding: EdgeInsets.only(left: icon != null ? 32 : 0),
+                          child: Text(
+                            subtitle,
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ),
-              GestureDetector(
-                onTap: () => onToggle(!isOn),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 40,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: isOn ? Colors.green : const Color(0xFF3A3A3A),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.all(2),
-                  child: AnimatedAlign(
+                ),
+                GestureDetector(
+                  onTap: enabled ? () => onToggle(!isOn) : null,
+                  child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    alignment:
-                        isOn ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
+                    width: 40,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: isOn ? Colors.green : const Color(0xFF3A3A3A),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: AnimatedAlign(
+                      duration: const Duration(milliseconds: 200),
+                      alignment:
+                          isOn ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (showDivider)
           const Divider(
-              color: Color(0xFF3A3A3A), height: 1, indent: 16, endIndent: 16),
+            color: Color(0xFF3A3A3A),
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+          ),
       ],
     );
   }

@@ -6,6 +6,7 @@ import 'notifications_screen.dart';
 import 'bottom_nav.dart';
 import 'settings_screen.dart';
 import 'api_config.dart';
+import 'friend_profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -29,13 +30,14 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoadingNotices = false;
   bool isLoadingFeaturedGame = false;
   http.Client? _httpClient;
-
+  late ScrollController _friendsScrollController;
   @override
   void initState() {
     super.initState();
     _initHttpClient();
     _loadFriends();
     _loadNotices();
+    _friendsScrollController = ScrollController();
     _loadFeaturedGame();
     _loadPopularGames();
   }
@@ -43,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _httpClient?.close();
+    _friendsScrollController.dispose();
     super.dispose();
   }
 
@@ -206,8 +209,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _buildFeaturedGame(),
                     _buildActiveFriends(),
-                    _buildOfficialGamePosts(),
-                    _buildReturnToPlay(),
                     _buildNoticesSection(),
                     _buildPopularOnXbox(),
                     const SizedBox(height: 80),
@@ -547,11 +548,14 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(
               height: 140,
               child: Scrollbar(
+                controller:
+                    _friendsScrollController, // Adicione o controller aqui
                 thumbVisibility: true,
                 trackVisibility: true,
                 thickness: 4,
                 radius: const Radius.circular(10),
                 child: ListView.builder(
+                  controller: _friendsScrollController, // E também aqui
                   scrollDirection: Axis.horizontal,
                   itemCount: friends.length,
                   itemBuilder: (context, index) {
@@ -584,147 +588,106 @@ class _HomeScreenState extends State<HomeScreen> {
         color: const Color(0xFF111827),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-            ),
-            child: ClipOval(
-              child: Image.network(
-                photoUrl,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 60,
-                    height: 60,
-                    decoration: const BoxDecoration(
-                      color: Color(0xff646464),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child:
-                          Icon(Icons.person, size: 40, color: Colors.white70),
-                    ),
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    width: 80,
-                    height: 80,
-                    decoration: const BoxDecoration(
-                      color: Colors.grey,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      child: GestureDetector(
+        onTap: () {
+          // Encontrar os dados completos do amigo na lista
+          final friendIndex =
+              friends.indexWhere((friend) => friend['username'] == name);
+          if (friendIndex != -1) {
+            final friendData = friends[friendIndex];
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FriendProfileScreen(
+                  friendData: friendData,
+                  currentUserData: widget.userData,
+                ),
+              ),
+            );
+          } else {
+            // Se não encontrar na lista, criar dados básicos
+            final basicFriendData = {
+              'username': name,
+              'photo': photoUrl,
+              'nome_completo': name,
+              'creditos': 0,
+              'id': null,
+            };
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FriendProfileScreen(
+                  friendData: basicFriendData,
+                  currentUserData: widget.userData,
+                ),
+              ),
+            );
+          }
+        },
+        child: Column(
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  photoUrl,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 60,
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        color: Color(0xff646464),
+                        shape: BoxShape.circle,
                       ),
-                    ),
-                  );
-                },
+                      child: const Center(
+                        child:
+                            Icon(Icons.person, size: 40, color: Colors.white70),
+                      ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: 80,
+                      height: 80,
+                      decoration: const BoxDecoration(
+                        color: Colors.grey,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            name,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
+            const SizedBox(height: 8),
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOfficialGamePosts() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Postagens oficiais de jogos',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildGamePost('Grand T...'),
-              _buildGamePost('Rainbow...'),
-              _buildGamePost('Fortnite'),
-              _buildGamePost('Halo'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGamePost(String name) {
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Color(0xFF111827),
-          ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          name,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReturnToPlay() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Volte a jogar',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildGameThumbnail(),
-              const SizedBox(width: 8),
-              _buildGameThumbnail(),
-              const SizedBox(width: 8),
-              _buildGameThumbnail(),
-            ],
-          ),
-        ],
       ),
     );
   }
