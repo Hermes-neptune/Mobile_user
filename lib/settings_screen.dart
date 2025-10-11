@@ -37,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  // Carregar ID do usuário
   Future<void> _loadUserId() async {
     final prefs = await SharedPreferences.getInstance();
     final userData = prefs.getString('user_data');
@@ -47,7 +46,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Carregar configurações locais de notificação
   Future<void> _loadNotificationSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -55,7 +53,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  // Carregar preferências do servidor
   Future<void> _loadServerPreferences() async {
     if (_userId == null) return;
 
@@ -74,7 +71,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _notificationsEnabled = preferences['mobile_notif'] ?? true;
           });
 
-          // Sincronizar com SharedPreferences
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('notifications_enabled', _notificationsEnabled);
         }
@@ -84,7 +80,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Salvar configurações locais de notificação
   Future<void> _saveNotificationSettings(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notifications_enabled', value);
@@ -92,13 +87,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _notificationsEnabled = value;
     });
 
-    // Também atualizar no servidor se usuário estiver logado
     if (_userId != null) {
       _updateServerPreference('mobile_notif', value);
     }
   }
 
-  // Atualizar preferência específica no servidor
   Future<void> _updateServerPreference(
       String preferenceType, bool value) async {
     if (_userId == null) return;
@@ -119,7 +112,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _showSnackBar('Preferência atualizada com sucesso', Colors.green);
         } else {
           _showSnackBar('Erro: ${data['message']}', Colors.red);
-          // Reverter mudança local em caso de erro
           await _loadServerPreferences();
         }
       } else {
@@ -132,7 +124,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Mostrar SnackBar
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -143,7 +134,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Função para abrir o site "Sobre Nós"
   Future<void> _openAboutUsWebsite() async {
     final Uri url = Uri.parse('https://hermes-neptune.github.io/site-produto/');
 

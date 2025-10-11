@@ -28,13 +28,11 @@ class _LoginScreenState extends State<LoginScreen> {
     _checkLoginStatus();
   }
 
-  // Verifica se o usuário já está logado
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final userData = prefs.getString('user_data');
 
     if (userData != null) {
-      // Usuário já está logado, navegar para home
       final user = jsonDecode(userData);
       Navigator.pushReplacement(
         context,
@@ -45,14 +43,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Salva os dados do usuário no armazenamento local
   Future<void> _saveUserData(Map<String, dynamic> userData) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_data', jsonEncode(userData));
     await prefs.setBool('is_logged_in', true);
   }
 
-  // Remove os dados do usuário do armazenamento local
   Future<void> _clearUserData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_data');
@@ -81,23 +77,19 @@ class _LoginScreenState extends State<LoginScreen> {
         final data = jsonDecode(response.body);
 
         if (response.statusCode == 200 && data['success'] == true) {
-          // Login bem-sucedido
           _showMessage('Login realizado com sucesso!', Colors.green);
 
-          // Salvar dados do usuário no armazenamento local
           await _saveUserData(data['user']);
 
-          // Navegar para a tela do dashboard passando os dados do usuário
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => HomeScreen(
-                userData: data['user'], // Passando os dados do usuário
+                userData: data['user'], 
               ),
             ),
           );
         } else {
-          // Login falhou
           setState(() {
             _errorMessage = data['message'] ?? 'Erro ao fazer login';
           });

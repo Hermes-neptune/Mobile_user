@@ -549,13 +549,13 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 140,
               child: Scrollbar(
                 controller:
-                    _friendsScrollController, // Adicione o controller aqui
+                    _friendsScrollController, 
                 thumbVisibility: true,
                 trackVisibility: true,
                 thickness: 4,
                 radius: const Radius.circular(10),
                 child: ListView.builder(
-                  controller: _friendsScrollController, // E também aqui
+                  controller: _friendsScrollController, 
                   scrollDirection: Axis.horizontal,
                   itemCount: friends.length,
                   itemBuilder: (context, index) {
@@ -590,7 +590,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: GestureDetector(
         onTap: () {
-          // Encontrar os dados completos do amigo na lista
           final friendIndex =
               friends.indexWhere((friend) => friend['username'] == name);
           if (friendIndex != -1) {
@@ -606,7 +605,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
           } else {
-            // Se não encontrar na lista, criar dados básicos
             final basicFriendData = {
               'username': name,
               'photo': photoUrl,

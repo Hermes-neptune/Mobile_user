@@ -63,7 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse(ApiConfig.fetchMessagesURL), // Adicione esta URL no ApiConfig
+        Uri.parse(ApiConfig.fetchMessagesURL),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -91,14 +91,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   ))
               .toList();
 
-          // Só atualiza se houve mudanças nas mensagens
           if (_messagesChanged(newMessages)) {
             setState(() {
               _messages.clear();
               _messages.addAll(newMessages);
             });
 
-            // Auto-scroll para a última mensagem
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (_scrollController.hasClients) {
                 _scrollController.animateTo(
@@ -140,7 +138,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    // Adiciona mensagem localmente primeiro (UI responsiva)
     final tempMessage = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       sender: widget.userData['id']?.toString() ?? '',
@@ -156,7 +153,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
     _messageController.clear();
 
-    // Auto-scroll para a nova mensagem
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -169,7 +165,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse(ApiConfig.sendMessageURL), // Adicione esta URL no ApiConfig
+        Uri.parse(ApiConfig.sendMessageURL),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -183,7 +179,6 @@ class _ChatScreenState extends State<ChatScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] != true && data['status'] != 'success') {
-          // Remove mensagem temporária em caso de erro
           setState(() {
             _messages.removeWhere((msg) => msg.id == tempMessage.id);
           });
@@ -196,11 +191,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           );
         } else {
-          // Busca mensagens atualizadas do servidor
           _fetchMessages();
         }
       } else {
-        // Remove mensagem temporária em caso de erro
         setState(() {
           _messages.removeWhere((msg) => msg.id == tempMessage.id);
         });
@@ -213,7 +206,6 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     } catch (e) {
-      // Remove mensagem temporária em caso de erro
       setState(() {
         _messages.removeWhere((msg) => msg.id == tempMessage.id);
       });
@@ -266,7 +258,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         ),
                         Text(
-                          'Online', // Você pode implementar status real depois
+                          'Online',
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 12,
@@ -283,7 +275,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
 
-            // Messages area
             Expanded(
               child: _isInitialLoad && _isLoading
                   ? const Center(
@@ -324,10 +315,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           controller: _scrollController,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
-                          itemCount: _messages.length +
-                              (_messages.isNotEmpty
-                                  ? 1
-                                  : 0), // +1 for date separator if has messages
+                          itemCount:
+                              _messages.length + (_messages.isNotEmpty ? 1 : 0),
                           itemBuilder: (context, index) {
                             if (index == 0 && _messages.isNotEmpty) {
                               // Date separator

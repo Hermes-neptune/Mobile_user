@@ -207,7 +207,6 @@ class _SocialScreenState extends State<SocialScreen>
         ),
       ),
     ).then((_) {
-      // Recarrega os grupos após voltar das configurações
       _loadGroups();
     });
   }
@@ -322,7 +321,7 @@ class _SocialScreenState extends State<SocialScreen>
       return;
     }
 
-    Navigator.pop(context); // Fecha o dialog
+    Navigator.pop(context); 
 
     try {
       final response = await http.post(
@@ -342,7 +341,7 @@ class _SocialScreenState extends State<SocialScreen>
         final data = json.decode(response.body);
         if (data['success']) {
           _showSnackBar('Grupo criado com sucesso!');
-          _loadGroups(); // Recarrega a lista
+          _loadGroups(); 
         } else {
           _showSnackBar('Erro: ${data['message']}');
         }

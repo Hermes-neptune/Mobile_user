@@ -35,7 +35,6 @@ class _BottomNavState extends State<BottomNav> {
         children: [
           _buildNavItem(Icons.home, 'Home', 0),
           _buildNavItem(Icons.people, 'Social', 1),
-          _buildNavItem(Icons.grid_view, 'Library', 2),
         ],
       ),
     );
@@ -47,7 +46,7 @@ class _BottomNavState extends State<BottomNav> {
     return GestureDetector(
       onTap: () => widget.onTap(index),
       child: Container(
-        color: Colors.transparent, // Para aumentar a área de toque
+        color: Colors.transparent,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -73,12 +72,12 @@ class _BottomNavState extends State<BottomNav> {
 
 class BottomNavSeparate extends StatelessWidget {
   final String currentPage;
-  final Map<String, dynamic>? userData; // Adicionado parâmetro userData
+  final Map<String, dynamic>? userData;
 
   const BottomNavSeparate({
     super.key,
     required this.currentPage,
-    this.userData, // Adicionado parâmetro userData
+    this.userData,
   });
 
   @override
@@ -93,7 +92,6 @@ class BottomNavSeparate extends StatelessWidget {
         children: [
           _buildNavItem(context, Icons.home, 'Home', 'home'),
           _buildNavItem(context, Icons.people, 'Social', 'social'),
-          _buildNavItem(context, Icons.grid_view, 'Library', 'library'),
         ],
       ),
     );
@@ -130,15 +128,15 @@ class BottomNavSeparate extends StatelessWidget {
   }
 
   void _navigateToPage(BuildContext context, String page) {
-    if (currentPage == page) return; // Não navegar se já está na página
+    if (currentPage == page) return;
 
     Widget targetPage;
     switch (page) {
       case 'home':
-        targetPage = HomeScreen(userData: userData); // Passando userData
+        targetPage = HomeScreen(userData: userData);
         break;
       case 'social':
-        targetPage = SocialScreen(userData: userData); // Passando userData
+        targetPage = SocialScreen(userData: userData);
         break;
       default:
         return;
@@ -148,7 +146,7 @@ class BottomNavSeparate extends StatelessWidget {
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => targetPage,
-        transitionDuration: Duration.zero, // Sem animação
+        transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
       ),
     );

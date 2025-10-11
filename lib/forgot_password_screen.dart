@@ -15,7 +15,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
   bool _isLoading = false;
   String? _message;
-  String? _messageType; // 'success' ou 'error'
+  String? _messageType; 
 
   Future<void> _sendResetEmail() async {
     if (_formKey.currentState!.validate()) {
@@ -28,7 +28,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       try {
         final response = await http.post(
           Uri.parse(ApiConfig
-              .forgotPasswordUrl), // Você precisa adicionar esta URL no seu ApiConfig
+              .forgotPasswordUrl),
           headers: {
             'Content-Type': 'application/json',
           },

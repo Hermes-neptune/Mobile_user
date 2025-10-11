@@ -106,7 +106,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
   }
 
   Color _getAvatarColor() {
-    // Gera uma cor baseada no username para consistência
     final username = fullFriendData?['username'] ?? '';
     final colors = [
       const Color(0xFF2E8B57),
@@ -649,7 +648,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pop(context); // Voltar para a tela anterior
+              Navigator.pop(context); 
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Funcionalidade em desenvolvimento'),

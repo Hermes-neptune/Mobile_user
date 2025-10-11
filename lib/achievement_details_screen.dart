@@ -20,7 +20,6 @@ class AchievementDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Header with back button
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -33,15 +32,12 @@ class AchievementDetailsScreen extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Achievement details
             Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Achievement icon
                     Container(
                       width: 150,
                       height: 150,
@@ -53,10 +49,7 @@ class AchievementDetailsScreen extends StatelessWidget {
                         child: _buildAchievementIcon(),
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
-                    // Achievement title
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Text(
@@ -69,10 +62,7 @@ class AchievementDetailsScreen extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
-                    // Progress bar
                     Container(
                       width: 200,
                       child: Column(
@@ -113,8 +103,6 @@ class AchievementDetailsScreen extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Achievements section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -136,10 +124,7 @@ class AchievementDetailsScreen extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Achievement cards
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),

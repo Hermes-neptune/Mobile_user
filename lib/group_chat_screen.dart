@@ -47,7 +47,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     _loadGroupInfo();
     _startMessagePolling();
 
-    // Adicionar listener para scroll (para carregar mais mensagens)
     _scrollController.addListener(_onScroll);
   }
 
@@ -68,7 +67,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   Future<void> _fetchNewMessages() async {
-    // Não buscar se estiver carregando mensagens iniciais ou enviando
     if ((isLoading && _isInitialLoad) || isSendingMessage) return;
 
     try {
@@ -79,7 +77,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           'grupo_id': widget.groupId,
           'user_id': widget.userData['id'],
           'limite': messagesLimit,
-          'offset': 0, // Sempre buscar as mensagens mais recentes
+          'offset': 0, 
         }),
       );
 
@@ -89,19 +87,16 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           final newMessages =
               List<Map<String, dynamic>>.from(data['mensagens'] ?? []);
 
-          // Só atualiza se houve mudanças nas mensagens
           if (_messagesChanged(newMessages)) {
             setState(() {
               messages = newMessages;
             });
 
-            // Auto-scroll para a última mensagem se estava próximo do fim
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (_scrollController.hasClients) {
                 final maxScroll = _scrollController.position.maxScrollExtent;
                 final currentScroll = _scrollController.position.pixels;
 
-                // Se estava nos últimos 100 pixels, fazer scroll automático
                 if (maxScroll - currentScroll < 100) {
                   _scrollController.animateTo(
                     _scrollController.position.maxScrollExtent,
@@ -115,7 +110,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         }
       }
     } catch (e) {
-      // Silenciar erros do polling automático
       if (_isInitialLoad) {
         print('Erro no polling de mensagens: $e');
       }
@@ -201,7 +195,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
             hasMore = data['pagination']?['has_more'] ?? false;
 
-            // Atualizar informações do grupo se disponível
             if (data['grupo_info'] != null) {
               groupInfo = data['grupo_info'];
             }
@@ -281,7 +274,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       isSendingMessage = true;
     });
 
-    // Adiciona mensagem localmente primeiro (UI responsiva)
     final tempMessage = {
       'id': DateTime.now().millisecondsSinceEpoch.toString(),
       'remetente_id': widget.userData['id'],
@@ -314,7 +306,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
-          // Remove mensagem temporária e busca mensagens atualizadas
           setState(() {
             messages.removeWhere((msg) => msg['id'] == tempMessage['id']);
           });
@@ -325,11 +316,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             });
             _scrollToBottom();
           } else {
-            // Se não retornou a mensagem, recarregar todas
             await _fetchNewMessages();
           }
         } else {
-          // Remove mensagem temporária em caso de erro
           setState(() {
             messages.removeWhere((msg) => msg['id'] == tempMessage['id']);
           });
@@ -338,7 +327,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           _messageController.text = message;
         }
       } else {
-        // Remove mensagem temporária em caso de erro
         setState(() {
           messages.removeWhere((msg) => msg['id'] == tempMessage['id']);
         });
@@ -349,7 +337,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     } catch (e) {
       print('Erro ao enviar mensagem: $e');
 
-      // Remove mensagem temporária em caso de erro
       setState(() {
         messages.removeWhere((msg) => msg['id'] == tempMessage['id']);
       });
@@ -687,7 +674,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                           padding: const EdgeInsets.all(16),
                           itemCount: messages.length + (isLoading ? 1 : 0),
                           itemBuilder: (context, index) {
-                            // Mostrar loading no topo se estiver carregando mais mensagens
                             if (index == 0 &&
                                 isLoading &&
                                 messages.isNotEmpty &&
@@ -703,7 +689,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                               );
                             }
 
-                            // Ajustar índice se estiver mostrando loading
                             final messageIndex = (isLoading &&
                                     messages.isNotEmpty &&
                                     !_isInitialLoad)

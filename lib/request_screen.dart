@@ -139,7 +139,7 @@ class _RequestsScreenState extends State<RequestsScreen>
     try {
       final response = await http.post(
         Uri.parse(ApiConfig
-            .searchUserURL), // Você precisa adicionar esta URL no ApiConfig
+            .searchUserURL),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -189,7 +189,6 @@ class _RequestsScreenState extends State<RequestsScreen>
         final data = json.decode(response.body);
         if (data['success'] == true) {
           _showSnackBar(data['message'] ?? 'Solicitação enviada com sucesso');
-          // Atualiza o resultado da pesquisa para mostrar que a solicitação foi enviada
           setState(() {
             searchResults = searchResults.map((user) {
               if (user['id'].toString() == friendId) {
@@ -229,7 +228,7 @@ class _RequestsScreenState extends State<RequestsScreen>
         final data = json.decode(response.body);
         if (data['success'] == true) {
           _showSnackBar(data['message'] ?? 'Ação realizada com sucesso');
-          _loadFriendRequests(); // Recarrega a lista
+          _loadFriendRequests(); 
         } else {
           _showSnackBar('Erro: ${data['message']}');
         }
@@ -259,7 +258,7 @@ class _RequestsScreenState extends State<RequestsScreen>
         final data = json.decode(response.body);
         if (data['success']) {
           _showSnackBar(data['message'] ?? 'Ação realizada com sucesso');
-          _loadGroupInvites(); // Recarrega a lista
+          _loadGroupInvites(); 
         } else {
           _showSnackBar('Erro: ${data['message']}');
         }

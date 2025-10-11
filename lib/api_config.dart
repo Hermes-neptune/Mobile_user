@@ -1,14 +1,18 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class ApiConfig {
+  // URLs de configuração com proxy CORS para Flutter Web
   static const String configUrl =
-      'https://hermes-neptune.github.io/site-sistema-Redirecionamento/api.json';
+      'https://raw.githubusercontent.com/Hermes-neptune/site-sistema-Redirecionamento/refs/heads/main/api.json';
+  static const String corsProxyUrl = 'https://corsproxy.io/?';
 
   static String? _cachedBaseUrl;
   static DateTime? _lastFetch;
   static const Duration cacheExpiration = Duration(minutes: 30);
   static bool _isInitialized = false;
+  static bool _isInitializing = false;
 
   static const String baseRoot = '/site-sistema-git/site-sistema/api/user/';
 
@@ -45,6 +49,13 @@ class ApiConfig {
   static const String messageGroupEndpoint = 'messages_group.php';
 
   static Future<void> initialize() async {
+    if (_isInitializing) {
+      while (_isInitializing) {
+        await Future.delayed(Duration(milliseconds: 100));
+      }
+      return;
+    }
+
     if (_isInitialized &&
         _cachedBaseUrl != null &&
         _lastFetch != null &&
@@ -52,43 +63,88 @@ class ApiConfig {
       return;
     }
 
-    try {
-      final response = await http.get(
-        Uri.parse(configUrl),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+    _isInitializing = true;
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+    await _tryMultipleSources();
 
-        if (data['status'] == 'success' && data['link'] != null) {
-          _cachedBaseUrl = data['link'].toString().trim();
-          _lastFetch = DateTime.now();
-          _isInitialized = true;
-        } else {
-          throw Exception('Formato JSON inválido ou status não é success');
+    _isInitializing = false;
+  }
+
+  static Future<void> _tryMultipleSources() async {
+    final urlsToTry = [
+      configUrl,
+      '${corsProxyUrl}${Uri.encodeComponent(configUrl)}', // Com proxy CORS
+      'https://api.allorigins.win/get?url=${Uri.encodeComponent(configUrl)}', // Proxy alternativo
+    ];
+
+    for (int i = 0; i < urlsToTry.length; i++) {
+      final url = urlsToTry[i];
+
+      try {
+        final response = await http.get(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Flutter App',
+            if (kIsWeb) 'Access-Control-Allow-Origin': '*',
+          },
+        ).timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          String jsonBody = response.body;
+
+          if (url.contains('allorigins.win')) {
+            final allOriginsData = json.decode(response.body);
+            jsonBody = allOriginsData['contents'] ?? '';
+          }
+
+          if (jsonBody.isNotEmpty) {
+            final Map<String, dynamic> data = json.decode(jsonBody);
+
+            if (data.containsKey('status') && data.containsKey('link')) {
+              if (data['status'] == 'success' &&
+                  data['link'] != null &&
+                  data['link'].toString().isNotEmpty) {
+                _cachedBaseUrl = data['link'].toString().trim();
+                _lastFetch = DateTime.now();
+                _isInitialized = true;
+                return;
+              }
+            }
+          }
         }
-      } else {
-        throw Exception('Erro HTTP: ${response.statusCode}');
+      } catch (e) {
+        continue;
       }
-    } catch (e) {
-      print('Erro ao buscar baseUrl: $e');
-      _cachedBaseUrl = 'https://91d0f82d23ff.ngrok-free.app';
-      _isInitialized = true;
     }
+
+    _cachedBaseUrl = 'https://a7bc62effefa.ngrok-free.ap';
+    _isInitialized = true;
+    _lastFetch = DateTime.now();
+
+    print('✅ Usando URL conhecida: $_cachedBaseUrl');
   }
 
   static String get baseUrl {
     if (!_isInitialized || _cachedBaseUrl == null) {
-      return 'https://91d0f82d23ff.ngrok-free.app';
+      print('🚀 Auto-inicializando API (síncrono)...');
+      _initializeInBackground();
+      return 'https://a7bc62effefa.ngrok-free.ap';
     }
     return _cachedBaseUrl!;
+  }
+
+  static void _initializeInBackground() async {
+    if (!_isInitializing && !_isInitialized) {
+      await initialize();
+    }
   }
 
   static void clearCache() {
     _cachedBaseUrl = null;
     _lastFetch = null;
     _isInitialized = false;
+    _isInitializing = false;
   }
 
   static Future<void> refresh() async {
@@ -96,63 +152,54 @@ class ApiConfig {
     await initialize();
   }
 
-  static String get loginUrl => '$baseUrl$baseRoot$loginEndpoint';
+  static Future<bool> testCurrentUrl() async {
+    try {
+      final testUrl = '$baseUrl$baseRoot$profileEndpoint';
 
+      final response = await http
+          .get(
+            Uri.parse(testUrl),
+            headers: defaultHeaders,
+          )
+          .timeout(const Duration(seconds: 5));
+
+      return response.statusCode == 200 || response.statusCode == 400;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static String get loginUrl => '$baseUrl$baseRoot$loginEndpoint';
   static String get forgotPasswordUrl =>
       '$baseUrl$baseRoot$forgotPasswordEndpoint';
-
   static String get registerUrl => '$baseUrl$registerEndpoint';
-
   static String get profileUrl => '$baseUrl$baseRoot$profileEndpoint';
-
   static String get friendsUrl => '$baseUrl$baseRoot$friendsEndpoint';
-
   static String get noticesUrl => '$baseUrl$baseRoot$noticesEndpoint';
-
   static String get featuredGameUrl => '$baseUrl$baseRoot$featuredGameEndpoint';
-
   static String get popularGamesUrl => '$baseUrl$baseRoot$popularGamesEndpoint';
-
   static String get configUrlComplete => '$baseUrl$configEndpoint';
-
   static String get conversationsUrl =>
       '$baseUrl$baseRoot$conversationsEndpoint';
-
   static String get getPreferencesURL => '$baseUrl$getPreEndpoint';
-
   static String get updatePreferencesURL => '$baseUrl$updatePreEndpoint';
-
   static String get fetchMessagesURL =>
       '$baseUrl$baseRoot$fetchMessagesEndpoint';
-
   static String get sendMessageURL => '$baseUrl$baseRoot$sendMessageEndpoint';
-
   static String get getMedalhasURL => '$baseUrl$baseRoot$getMedalhasEndpoint';
-
   static String get createGroupURL => '$baseUrl$baseRoot$createGroupEndpoint';
-
   static String get inviteGroupURL => '$baseUrl$baseRoot$inviteGroupEndpoint';
-
   static String get sendMessagesGroupURL =>
       '$baseUrl$baseRoot$sendMessagesGroupEndpoint';
-
   static String get infoGroupURL => '$baseUrl$baseRoot$infoGroupEndpoint';
-
   static String get leaveGroupURL => '$baseUrl$baseRoot$leaveGroupEndpoint';
-
   static String get deleteGroupURL => '$baseUrl$baseRoot$deleteGroupEndpoint';
-
   static String get searchUserURL => '$baseUrl$baseRoot$searchUserEndpoint';
-
   static String get searchForGroupURL =>
       '$baseUrl$baseRoot$searchForGroupEndpoint';
-
   static String get groupMembersURL => '$baseUrl$baseRoot$groupMembersEndpoint';
-
   static String get groupURL => '$baseUrl$baseRoot$groupEndpoint';
-
   static String get groupRequestURL => '$baseUrl$baseRoot$groupRequestEndpoint';
-
   static String get friendRequestURL =>
       '$baseUrl$baseRoot$friendRequestEndpoint';
   static String get messageGroupURL => '$baseUrl$baseRoot$messageGroupEndpoint';
@@ -160,5 +207,52 @@ class ApiConfig {
   static Map<String, String> get defaultHeaders => {
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true',
+        if (kIsWeb) 'Access-Control-Allow-Origin': '*',
       };
+
+  static Future<http.Response> makeRequest(
+    String endpoint, {
+    String method = 'GET',
+    Map<String, dynamic>? body,
+    Map<String, String>? additionalHeaders,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    final headers = {...defaultHeaders};
+    if (additionalHeaders != null) {
+      headers.addAll(additionalHeaders);
+    }
+
+    final uri = Uri.parse(endpoint);
+
+    switch (method.toUpperCase()) {
+      case 'POST':
+        return await http.post(
+          uri,
+          headers: headers,
+          body: body != null ? json.encode(body) : null,
+        );
+      case 'PUT':
+        return await http.put(
+          uri,
+          headers: headers,
+          body: body != null ? json.encode(body) : null,
+        );
+      case 'DELETE':
+        return await http.delete(uri, headers: headers);
+      default:
+        return await http.get(uri, headers: headers);
+    }
+  }
+
+  static Future<http.Response> get(String endpoint) async {
+    return makeRequest(endpoint, method: 'GET');
+  }
+
+  static Future<http.Response> post(
+      String endpoint, Map<String, dynamic> body) async {
+    return makeRequest(endpoint, method: 'POST', body: body);
+  }
 }

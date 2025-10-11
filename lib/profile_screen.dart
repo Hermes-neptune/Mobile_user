@@ -82,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await http.post(
         Uri.parse(
-            ApiConfig.getMedalhasURL), // Adicione esta URL ao seu ApiConfig
+            ApiConfig.getMedalhasURL),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -127,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildUserProfile(context),
                     _buildRewardsPoints(),
                     _buildTabContent(),
-                    const SizedBox(height: 80), // Space for bottom navigation
+                    const SizedBox(height: 80),
                   ],
                 ),
               ),
