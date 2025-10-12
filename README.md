@@ -233,7 +233,7 @@ Este projeto é distribuído sob a licença **MIT License**. Consulte o arquivo 
 
 ## 👥 Autores e Reconhecimentos
 
-- **Hermes** - Desenvolvedor Principal - [Hermes-neptune](https://github.com/Hermes-neptune)
+- **MTSmalow** - Desenvolvedor Principal - [MTSmalow](https://github.com/MTSmalow)
 
 ## 📞 Suporte e Contato
 
@@ -250,7 +250,3 @@ Para dúvidas, sugestões ou reportar problemas:
 - [ ] Melhorias na interface do chat
 - [ ] Notificações push
 - [ ] Testes automatizados expandidos
-
----
-
-**Desenvolvido com ❤️ usando Flutter**
